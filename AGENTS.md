@@ -12,6 +12,9 @@ Python 3.13 on Windows, NVIDIA GPU (RTX 2060 6 GB). UI text, logs and user-facin
 5. **Framing**: `framing.py` finds the largest face (YuNet) and computes one zoom plus a per-time translation that puts the preacher at horizontal centre. It also applies the user offsets.
 6. **Badges**: the title and the preacher name are rendered by `illustrate.py`.
 7. **Cards**: Claude plans them, `images.py` (OpenAI Images, ChatGPT) draws them, and `illustrate.py` wraps each picture in the paper-card template.
+   - `images.Batch` starts every picture in parallel right after the analysis (`OPENAI_IMAGE_CONCURRENCY`, default 6). Cuts, face detection and badges run meanwhile, and results are collected only when the cards are placed.
+   - A picture slower than 90 s is retried at `quality="low"`, then on `gpt-image-1`.
+   - Finished pictures are cached in `jobs/_image_cache/`, keyed by model and prompt, so re-renders cost nothing.
 8. **Audio**: kept ranges are streamed from a temporary 16-bit wav with 6 ms fades into `edited_audio.wav`.
 9. **Render**: `render.py` decodes CFR frames from ffmpeg, picks frames through `Timeline.to_orig`, then applies `compose()` (reframe → name → title → cards) and pipes to ffmpeg (NVENC if available, else x264).
 10. **Outputs**: `jobs/<timestamp>/` receives `결과영상.mp4`, `편집리포트.html`, `자막.srt`, `transcript.json`, `analysis.json`, `cards/` and `log.txt`.

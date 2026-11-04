@@ -4,9 +4,9 @@ from __future__ import annotations
 import html
 import json
 import re
+import threading
 import time
 import wave
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -142,12 +142,14 @@ def run(input_path: str, opts: Options, progress=lambda frac, msg: None) -> dict
     job = JOBS_DIR / time.strftime("%Y%m%d_%H%M%S")
     (job / "cards").mkdir(parents=True, exist_ok=True)
     log_lines: list[str] = []
+    log_lock = threading.Lock()  # image threads log too
 
     def log(msg: str) -> None:
         line = f"[{time.strftime('%H:%M:%S')}] {msg}"
-        log_lines.append(line)
-        print(line, flush=True)
-        (job / "log.txt").write_text("\n".join(log_lines), encoding="utf-8")
+        with log_lock:
+            log_lines.append(line)
+            print(line, flush=True)
+            (job / "log.txt").write_text("\n".join(log_lines), encoding="utf-8")
 
     log(f"입력: {input_path}")
     log(f"옵션: {asdict(opts)}")
@@ -202,6 +204,16 @@ def run(input_path: str, opts: Options, progress=lambda frac, msg: None) -> dict
             log(f"대본 분석 실패 (기본 규칙으로 진행): {e}")
     (job / "analysis.json").write_text(json.dumps(analysis, ensure_ascii=False, indent=1), encoding="utf-8")
 
+    # 2b. Start every picture now, in parallel, and keep working: cuts, face detection and badges
+    #     run while ChatGPT draws. Results are collected just before they are needed.
+    planned = []
+    if want_cards and ai_ok:
+        for c in sorted(analysis["cards"], key=lambda c: c["start_sec"]):
+            if t0 <= c["start_sec"] < t1:
+                ctx = " ".join(s["text"] for s in segments if s["end"] >= c["start_sec"] - 5 and s["start"] <= c["start_sec"] + 8)
+                planned.append(dict(c, context=ctx))
+    batch = images.Batch(planned, log) if planned else None
+
     # 3. cut plan: trim + silence + fillers
     progress(0.28, "컷 편집 계획")
     removals = [(0.0, t0), (t1, duration)]
@@ -235,31 +247,20 @@ def run(input_path: str, opts: Options, progress=lambda frac, msg: None) -> dict
 
     # 6. explainer cards (Claude plans, ChatGPT draws, paper-card template wraps)
     cards: list[dict] = []
-    if want_cards and ai_ok and analysis["cards"]:
-        progress(0.40, "설명 그림 그리는 중 (ChatGPT)")
-        plan, last_end = [], -1e9
-        for c in sorted(analysis["cards"], key=lambda c: c["start_sec"]):
-            if not (t0 <= c["start_sec"] < t1):
-                continue
+    if batch:
+        progress(0.40, "설명 그림 마무리 중 (ChatGPT, 병렬 생성)")
+        pics = batch.results()
+        plan, plan_pics, last_end = [], [], -1e9
+        for c, pic in zip(planned, pics):
             ts = tl.to_new(c["start_sec"])
             dur = float(np.clip(c["duration_sec"], 3.0, 8.0))
-            if ts < last_end + 1.0 or ts + dur > tl.total:
+            if not pic or ts < last_end + 1.0 or ts + dur > tl.total:
                 continue
-            ctx = " ".join(s["text"] for s in segments if s["end"] >= c["start_sec"] - 5 and s["start"] <= c["start_sec"] + 8)
-            plan.append(dict(c, t0=ts, t1=ts + dur, context=ctx))
+            plan.append(dict(c, t0=ts, t1=ts + dur))
+            plan_pics.append(pic)
             last_end = ts + dur
-
-        def draw(c):
-            try:
-                return images.generate(c["visual_brief"], c["context"])
-            except Exception as e:
-                log(f"그림 생성 실패 ({c['concept']}): {e}")
-                return None
-
-        with ThreadPoolExecutor(max_workers=3) as ex:
-            pics = list(ex.map(draw, plan))
         jobs = []
-        for i, (c, pic) in enumerate(zip(plan, pics)):
+        for i, (c, pic) in enumerate(zip(plan, plan_pics)):
             if pic:
                 (job / "cards" / f"art_{i + 1:02d}.png").write_bytes(pic)
                 c["png"] = job / "cards" / f"card_{i + 1:02d}.png"
