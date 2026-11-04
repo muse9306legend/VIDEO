@@ -1,0 +1,12 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# local environment / outputs
+.venv/
+jobs/
+__pycache__/
+*.pyc
+*.mp4
+*.wav
