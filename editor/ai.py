@@ -6,20 +6,28 @@ import os
 
 import anthropic
 
-MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
 _client: anthropic.Anthropic | None = None
+_client_key: str | None = None
+
+
+def model() -> str:
+    return os.environ.get("CLAUDE_MODEL", "claude-opus-5-5")
 
 
 def available() -> bool:
-    global _client
-    if _client is not None:
-        return True
-    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
+    """True when a key is configured. Rebuilds the client when the key in .env changed."""
+    global _client, _client_key
+    key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+    if not key:
+        _client = _client_key = None
         return False
+    if _client is not None and key == _client_key:
+        return True
     try:
-        _client = anthropic.Anthropic()
+        _client, _client_key = anthropic.Anthropic(), key
         return True
     except Exception:
+        _client = _client_key = None
         return False
 
 
@@ -30,7 +38,7 @@ def _call(system: str, user: str, *, effort: str, schema: dict | None = None, ma
     if schema:
         output_config["format"] = {"type": "json_schema", "schema": schema}
     resp = _client.beta.messages.create(
-        model=MODEL,
+        model=model(),
         max_tokens=max_tokens,
         system=system,
         messages=[{"role": "user", "content": user}],

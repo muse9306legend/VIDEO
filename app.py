@@ -3,10 +3,20 @@ import os
 
 import gradio as gr
 
-from editor import ai, images
+from editor import ai, images, load_env
 from editor.pipeline import JOBS_DIR, Options, parse_time, preview, run
 
 ALIGN = {"좌측 정렬": "left", "중앙 정렬": "center", "우측 정렬": "right"}
+
+
+def key_status() -> str:
+    """Re-read .env every time the page opens, so the warning reflects keys added while running."""
+    load_env()
+    missing = [n for n, ok in (("Claude(ANTHROPIC_API_KEY)", ai.available()), ("ChatGPT(OPENAI_API_KEY)", images.available())) if not ok]
+    if not missing:
+        return ""
+    return (f"> ⚠️ `.env` 에 **{', '.join(missing)}** 키가 없어요. 키를 넣으면 다시 실행하지 않아도 다음 작업부터 적용돼요. "
+            "Claude 키가 없으면 '어/음'만 자르고, ChatGPT 키가 없으면 설명 그림을 넣지 않아요.")
 
 
 def make_opts(trim_start, trim_end, remove_silence, silence_db, min_silence, remove_fillers,
@@ -58,10 +68,8 @@ def do_run(video, preview_at, *settings, progress=gr.Progress()):
 
 with gr.Blocks(title="자동 영상 편집기") as demo:
     gr.Markdown("# 🎬 자동 영상 편집기\n트림 → 무음·필러워드 컷 → 설교자 가운데 맞춤 → 제목·이름 표시 → 설명 그림 삽입")
-    missing = [n for n, ok in (("Claude(ANTHROPIC_API_KEY)", ai.available()), ("ChatGPT(OPENAI_API_KEY)", images.available())) if not ok]
-    if missing:
-        gr.Markdown(f"> ⚠️ `.env` 에 **{', '.join(missing)}** 키가 없어요. "
-                    "Claude 키가 없으면 '어/음'만 자르고, ChatGPT 키가 없으면 설명 그림을 넣지 않아요.")
+    keys_md = gr.Markdown(key_status())
+    demo.load(key_status, None, keys_md)
     with gr.Row():
         with gr.Column():
             video = gr.Video(label="원본 영상", sources=["upload"])
@@ -122,6 +130,8 @@ with gr.Blocks(title="자동 영상 편집기") as demo:
         t.submit(do_preview, pv_inputs, preview_img)
     go.click(do_run, pv_inputs, [result, files, summary])
 
+JOBS_DIR.mkdir(exist_ok=True)
+
 if __name__ == "__main__":
-    JOBS_DIR.mkdir(exist_ok=True)
+    # Plain start (no auto-reload). 실행.bat uses `gradio app.py` instead, which reloads on code changes.
     demo.queue().launch(server_name="127.0.0.1", inbrowser=not os.environ.get("NO_BROWSER"), allowed_paths=[str(JOBS_DIR)])

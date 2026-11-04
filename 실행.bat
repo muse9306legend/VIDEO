@@ -10,5 +10,13 @@ if not exist .venv\Scripts\python.exe (
   .venv\Scripts\python.exe -m pip install -r requirements.txt
   .venv\Scripts\python.exe -m playwright install chromium
 )
-.venv\Scripts\python.exe app.py
+if not exist jobs mkdir jobs
+
+rem 자동 반영 모드: 코드(app.py, editor\*.py)가 바뀌면 다시 실행하지 않아도 화면이 새로 불러옵니다.
+rem .env 의 API 키는 미리보기/편집을 누를 때마다 다시 읽습니다.
+set GRADIO_SERVER_NAME=127.0.0.1
+set GRADIO_SERVER_PORT=7860
+set GRADIO_ALLOWED_PATHS=%~dp0jobs
+start "" cmd /c "timeout /t 10 >nul & start http://127.0.0.1:7860"
+.venv\Scripts\gradio.exe app.py --demo-name demo --watch-dirs editor
 pause

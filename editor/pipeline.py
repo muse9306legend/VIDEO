@@ -13,7 +13,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from . import ai, cuts, framing, illustrate, images, media, render, transcribe
+from . import ai, cuts, framing, illustrate, images, load_env, media, render, transcribe
 
 ROOT = Path(__file__).resolve().parent.parent
 JOBS_DIR = ROOT / "jobs"
@@ -115,6 +115,7 @@ _face_cache: dict = {}
 
 
 def preview(input_path: str, opts: Options, at: float | None = None) -> np.ndarray:
+    load_env()
     info = media.probe(input_path)
     W, H = media.target_size(info["width"], info["height"], min(opts.max_side, 1280))
     t0, t1 = trim_range(opts, info["duration"])
@@ -139,6 +140,7 @@ def preview(input_path: str, opts: Options, at: float | None = None) -> np.ndarr
 # ---------------------------------------------------------------- full run
 
 def run(input_path: str, opts: Options, progress=lambda frac, msg: None) -> dict:
+    load_env()  # pick up keys added to .env while the program is running
     job = JOBS_DIR / time.strftime("%Y%m%d_%H%M%S")
     (job / "cards").mkdir(parents=True, exist_ok=True)
     log_lines: list[str] = []

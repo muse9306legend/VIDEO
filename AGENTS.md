@@ -64,8 +64,13 @@ The `pipeline.py::preview()` path renders a single frame through the same `compo
 
 ## Run / test
 
+- `실행.bat` runs `gradio app.py --demo-name demo --watch-dirs editor`, Gradio's auto-reload mode. Edits to `app.py` and `editor/*.py` apply to the running UI in about 4 s without a restart.
+  - Server settings come from `GRADIO_SERVER_NAME`, `GRADIO_SERVER_PORT` and `GRADIO_ALLOWED_PATHS` (the `jobs` folder) in the bat file, because the `__main__` block does not run in reload mode.
+  - Do not edit code while the user is rendering a long sermon: a reload can interrupt the running job.
+- `.env` is re-read by `editor.load_env()` at page load and at the start of every `preview()` / `run()`. `ai.available()` rebuilds the Claude client when the key changes, and `images.py` reads its env vars on every call. Never cache API keys or model names at import time.
+
 ```bash
-.venv\Scripts\python app.py                     # UI (NO_BROWSER=1 to skip opening a browser)
+.venv\Scripts\python app.py                     # UI without auto-reload (NO_BROWSER=1 to skip opening a browser)
 .venv\Scripts\python cli.py 설교.mp4 --start 0:06 --end 0:45.7 --title "두려워하지 말라" --name "홍길동 담임목사" --follow
 ```
 
