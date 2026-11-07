@@ -2,7 +2,5 @@ anthropic>=2.4
 openai>=3.45
 faster-whisper
 gradio>=6
-opencv-python>=5
 numpy
-playwright
-pydantic
+pillow>=11

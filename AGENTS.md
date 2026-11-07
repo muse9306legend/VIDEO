@@ -1,81 +1,82 @@
-# AGENTS.md — 설교 영상 자동 편집기
+# AGENTS.md — 키즈 유튜브 AI 편집기
 
-Korean sermon videos → trimmed, tightened, preacher-centred video with title/name badges and explainer pictures.
+Korean family kids-YouTube videos → the same video with AI explainer picture cards and the user's twins as
+cartoon characters who react in speech bubbles. No cutting: the original video and audio play unchanged.
 Python 3.13 on Windows, NVIDIA GPU (RTX 2060 6 GB). UI text, logs and user-facing messages are Korean.
 
-## Pipeline (`editor/pipeline.py::run`)
+## Pipeline (`editor/pipeline.py`)
 
-1. **Trim**: `trim_start` / `trim_end` become removals `(0, start)` and `(end, duration)`. Only the trimmed range is transcribed.
-2. **Speech**: `transcribe.py` runs faster-whisper large-v3 with word timestamps. Its `initial_prompt` contains disfluencies on purpose so Whisper writes "어/음" out instead of dropping them.
-3. **Claude analysis**: `ai.py::analyze` makes one structured-output call that returns which filler candidates to cut and where explainer cards help.
-4. **Cuts**: `cuts.py` shortens silences (RMS dB), removes filler words and builds the keep list. `Timeline` maps original time ↔ edited time.
-5. **Framing**: `framing.py` finds the largest face (YuNet) and computes one zoom plus a per-time translation that puts the preacher at horizontal centre. It also applies the user offsets.
-6. **Badges**: the title and the preacher name are rendered by `illustrate.py`.
-7. **Cards**: Claude plans them, `images.py` (OpenAI Images, ChatGPT) draws them, and `illustrate.py` wraps each picture in the paper-card template.
-   - `images.Batch` starts every picture in parallel right after the analysis (`OPENAI_IMAGE_CONCURRENCY`, default 6). Cuts, face detection and badges run meanwhile, and results are collected only when the cards are placed.
-   - A picture slower than 90 s is retried at `quality="low"`, then on `gpt-image-1`.
-   - Finished pictures are cached in `jobs/_image_cache/`, keyed by model and prompt, so re-renders cost nothing.
-8. **Audio**: kept ranges are streamed from a temporary 16-bit wav with 6 ms fades into `edited_audio.wav`.
-9. **Render**: `render.py` decodes CFR frames from ffmpeg, picks frames through `Timeline.to_orig`, then applies `compose()` (reframe → name → title → cards) and pipes to ffmpeg (NVENC if available, else x264).
-10. **Outputs**: `jobs/<timestamp>/` receives `결과영상.mp4`, `편집리포트.html`, `자막.srt`, `transcript.json`, `analysis.json`, `cards/` and `log.txt`.
+1. **Speech**: `transcribe.py` runs faster-whisper (`WHISPER_MODEL`, default large-v3) on a 16 kHz mono wav.
+2. **Plan**: `ai.py::plan` makes one structured-output Claude call returning `cards` (start, duration, concept,
+   visual_brief, label) and `reactions` (start, duration, twin A/B, pose, text, emoji). `ai.clean` clamps
+   times and removes overlaps.
+3. **Pictures + characters, in parallel**: `images.Batch` draws every card at once
+   (`OPENAI_IMAGE_CONCURRENCY`, default 6) while `characters.sprites` draws the twins:
+   - one base drawing per twin (from reference photos via `images.edit` when given),
+   - then every needed pose from that base image, so the character stays the same,
+   - `cut_out` keeps real transparency or flood-fills a plain background away.
+   - Slow pictures fall back to `quality="low"`, then `gpt-image-1`. Results are cached in
+     `jobs/_image_cache/` keyed by model, size, prompt and reference images.
+4. **Layout**: `pipeline.layout` turns the plan into `overlay.El` items. Twin A is bottom-left, twin B is
+   bottom-right. Cards sit top-right in landscape, or top-left when B is talking at the same time; in
+   portrait they sit top-centre.
+5. **Render**: `media.FrameReader` streams CFR RGB frames, `overlay.compose` draws the active overlays,
+   `media.VideoWriter` encodes (NVENC if it really works, else x264) and muxes the original audio.
+6. **Outputs** in `jobs/<timestamp>/`: `결과영상.mp4`, `편집리포트.html`, `plan.json`, `transcript.json`,
+   `card_XX.png`, `characters/`, `log.txt`.
 
-The `pipeline.py::preview()` path renders a single frame through the same `compose()`, so the preview always matches the final render. Keep it that way.
+`prepare()` does steps 1-4 and returns a `Job`; `render()` does step 5; `frame_at()` draws one preview frame
+through the same `compose()`. The preview must always match the final render — keep it that way.
+Passing a saved `plan` skips speech and Claude (used by "고친 계획 적용" and `cli.py --plan`).
 
 ## Files
 
 | File | Role |
 |---|---|
-| `app.py` | Gradio UI (local, 127.0.0.1). Sliders update the preview on release. |
-| `cli.py` | Same options from the command line. |
-| `editor/media.py` | ffprobe/ffmpeg helpers: `FrameReader`, `VideoWriter`, `AudioWriter`, `grab_frame`. |
-| `editor/cuts.py` | Filler word lists, silence detection, `build_keeps`, `Timeline`. |
-| `editor/framing.py` | Face sampling (static or follow), `Framing.apply`, `person_anchor`. |
-| `editor/illustrate.py` | Paper-card template rendered in headless Chromium (Playwright). |
-| `editor/render.py` | Overlay placement (`title_pos`, `name_pos`, `prepare_card`), `compose`, `render`. |
-| `editor/ai.py` | Claude calls. |
-| `editor/images.py` | ChatGPT image generation. |
+| `app.py` | Gradio UI (127.0.0.1): analyse → preview / edit plan → render. |
+| `cli.py` | Same from the command line, including `--plan` re-render. |
+| `editor/__init__.py` | Paths and `load_env()`. |
+| `editor/media.py` | ffprobe/ffmpeg: `probe`, `extract_wav`, `grab_frame`, `FrameReader`, `VideoWriter`. |
+| `editor/transcribe.py` | faster-whisper. |
+| `editor/ai.py` | Claude plan + `clean`. |
+| `editor/images.py` | OpenAI image generation, cache, `Batch`. |
+| `editor/characters.py` | Poses, sprite prompts, `cut_out`, placeholder characters, `sprites()`. |
+| `editor/overlay.py` | Paper card, speech bubble, name tag, `El` animation, `compose`. |
+| `editor/pipeline.py` | `Settings`, `prepare`, `layout`, `render`, `frame_at`, report. |
 | `assets/fonts` | Gaegu (OFL). |
-| `assets/models` | YuNet face detector (opencv_zoo). |
 
 ## Rules — do not break
 
-- **Secrets**: API keys live only in `.env`, which is gitignored. `.env.example` must keep empty values. Run a secret scan before every commit, for example `git grep --cached -nE "sk-ant-|sk-proj-|sk-[A-Za-z0-9]{20,}"`.
-- **Design template is fixed**:
-  - Colours: cream paper `#FFF8EC`, ink `#2E2A26` outlines, coral `#FFB4A2` accent.
-  - Hand-drawn wobble from the SVG `feTurbulence`/`feDisplacementMap` filters, Gaegu Bold text, soft offset shadow.
-  - New overlays must reuse `illustrate.py`, not draw text with OpenCV.
-- **Preacher name** is always anchored below the preacher (`render.name_pos` uses `framing.person_anchor`) and follows them in follow mode. Do not turn it into a free-floating position.
-- **Title**: toggle, left/center/right alignment, and X/Y offsets as fractions of the frame.
-- **No black bars**: `Framing.at` clamps the translation so the zoomed frame always covers the output, and zoom is a single value for the whole video (no zoom pumping).
-- **No text inside AI images**: image models misspell Korean. Short labels are rendered by us under the picture.
-- **Sermon-specific editing**: never cut inside Bible readings or prayers, keep deliberate pauses (`min_silence` default 1.0 s), and when unsure keep the word.
-- **Graceful degradation**: without `ANTHROPIC_API_KEY`, only strong fillers ("어/음") are cut. Without `OPENAI_API_KEY`, no cards are added. Every AI failure is logged and the edit continues.
-- **Long videos (30–60 min)**: never hold full-length audio or video in memory. Stream through `FrameReader` and `AudioWriter`, and read wav ranges with `wave.setpos`.
+- **Secrets**: API keys live only in `.env` (gitignored). `.env.example` keeps empty values. Run a secret
+  scan before every commit, e.g. `git grep --cached -nE "sk-ant-|sk-proj-|sk-[A-Za-z0-9]{20,}"`.
+- **Design**: cream paper `#FFF8EC`, ink `#2E2A26` outlines with a slight hand-drawn wobble, Gaegu Bold
+  text, soft offset shadow; twin colours coral `#FFB4A2` (A) and sky `#8ECAE6` (B). New overlays are drawn
+  in `overlay.py` with Pillow in this style.
+- **No text inside AI images**: image models misspell Korean. Labels and bubbles are rendered by us.
+- **Kids-safe**: everything the twins say is kind; never mock anyone. Characters are cartoons, never a
+  realistic likeness.
+- **Graceful degradation**: without `ANTHROPIC_API_KEY` there is no plan (a saved plan still works).
+  Without `OPENAI_API_KEY` there are no cards and the twins use `characters.placeholder`. Every AI failure
+  is logged and the edit continues.
+- **Long videos (30-60 min)**: never hold the full video in memory. Stream frames; overlays are drawn once
+  as RGBA images and only moved, scaled and faded per frame.
 
 ## Claude API usage
 
 - Model: `claude-opus-5-5` by default, overridable with `CLAUDE_MODEL`.
-- Calls go through `client.beta.messages.create`, with:
-  - `output_config.effort`
-  - `output_config.format` (JSON schema)
-  - server-side fallback: `betas=["server-side-fallback-2026-07-01"]`, `fallbacks="default"`
+- `client.beta.messages.create` with `output_config.effort`, `output_config.format` (JSON schema) and
+  server-side fallback: `betas=["server-side-fallback-2026-07-01"]`, `fallbacks="default"`.
 - Check `stop_reason` for `refusal` and `max_tokens` before reading the text.
 - Do not add `temperature`/`top_p`, `budget_tokens` or assistant prefill.
 
 ## Run / test
 
-- `실행.bat` runs `gradio app.py --demo-name demo --watch-dirs editor`, Gradio's auto-reload mode. Edits to `app.py` and `editor/*.py` apply to the running UI in about 4 s without a restart.
-  - Server settings come from `GRADIO_SERVER_NAME`, `GRADIO_SERVER_PORT` and `GRADIO_ALLOWED_PATHS` (the `jobs` folder) in the bat file, because the `__main__` block does not run in reload mode.
-  - Do not edit code while the user is rendering a long sermon: a reload can interrupt the running job.
-- `.env` is re-read by `editor.load_env()` at page load and at the start of every `preview()` / `run()`. `ai.available()` rebuilds the Claude client when the key changes, and `images.py` reads its env vars on every call. Never cache API keys or model names at import time.
-
-```bash
-.venv\Scripts\python app.py                     # UI without auto-reload (NO_BROWSER=1 to skip opening a browser)
-.venv\Scripts\python cli.py 설교.mp4 --start 0:06 --end 0:45.7 --title "두려워하지 말라" --name "홍길동 담임목사" --follow
-```
-
-- There is no automated test suite.
-- To verify a change, run `cli.py` on a short clip, then extract frames with ffmpeg and look at them: centring, name under the preacher, title alignment, the card.
-- Check `log.txt` and the report.
-- First runs download the Whisper model (about 3 GB). Playwright needs `python -m playwright install chromium`.
-- Setup from scratch: `실행.bat` (creates `.venv`, installs CUDA torch and `requirements.txt`).
+- `실행.bat` creates `.venv`, installs CUDA torch and `requirements.txt`, then runs
+  `gradio app.py --demo-name demo --watch-dirs editor` (auto-reload: edits apply in about 4 s).
+  Server settings come from `GRADIO_SERVER_NAME`, `GRADIO_SERVER_PORT`, `GRADIO_ALLOWED_PATHS` in the bat.
+  Do not edit code while the user is rendering a long video: a reload can interrupt the job.
+- `.env` is re-read at page load and at the start of every `prepare()`. Never cache API keys or model names
+  at import time.
+- There is no automated test suite. To verify a change, render a short clip with a hand-written plan
+  (`cli.py clip.mp4 --plan plan.json`), extract frames with ffmpeg and look at them: card position,
+  characters at the bottom corners, bubble wrapping, emoji, portrait layout.

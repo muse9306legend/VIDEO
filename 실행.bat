@@ -8,7 +8,6 @@ if not exist .venv\Scripts\python.exe (
   .venv\Scripts\python.exe -m pip install --upgrade pip
   .venv\Scripts\python.exe -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
   .venv\Scripts\python.exe -m pip install -r requirements.txt
-  .venv\Scripts\python.exe -m playwright install chromium
 )
 if not exist jobs mkdir jobs
 

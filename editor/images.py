@@ -1,10 +1,8 @@
-"""Explainer illustrations generated with ChatGPT's image model (OpenAI Images API).
+"""Pictures from ChatGPT's image model (OpenAI Images API).
 
-Image generation is the slowest step (tens of seconds per picture), so:
-- all pictures are requested in parallel (OPENAI_IMAGE_CONCURRENCY, default 6),
-- the pipeline starts them right after the transcript analysis and keeps working meanwhile,
-- a picture that is too slow is retried once with faster settings,
-- finished pictures are cached, so re-rendering the same sermon (e.g. after moving a slider) costs nothing.
+Generation is the slowest step, so every picture is requested in parallel (OPENAI_IMAGE_CONCURRENCY,
+default 6) while the rest of the pipeline keeps working, slow requests fall back to faster settings,
+and finished pictures are cached in jobs/_image_cache so re-renders cost nothing.
 """
 from __future__ import annotations
 
@@ -15,17 +13,16 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
-CACHE_DIR = Path(__file__).resolve().parent.parent / "jobs" / "_image_cache"
+from . import JOBS
 
-STYLE = (
-    "Flat vector illustration combined with a hand-drawn cartoon look: thick, slightly wobbly dark brown-black "
-    "outlines (#2E2A26) with round line ends, flat solid fills, a few small white highlight strokes, no gradients, "
-    "no photorealism. Warm pastel palette: coral #FFB4A2, yellow #FFD166, sky blue #8ECAE6, mint #95D5B2, "
-    "lavender #CDB4DB, orange #F4A261. Simple, friendly and calm, one clear idea, 3-8 objects, generous empty space. "
-    "Plain solid cream background (#FFF8EC) with no border or frame. "
-    "Absolutely no text, letters, numbers or captions anywhere in the image. "
-    "Respectful and reverent for a church sermon; people are simple generic cartoon figures, never a realistic "
-    "likeness of a real person; prefer symbolic objects."
+CACHE_DIR = JOBS / "_image_cache"
+
+CARD_STYLE = (
+    "Flat vector illustration combined with a hand-drawn cartoon look for a kids YouTube channel: thick, slightly "
+    "wobbly dark outlines (#2E2A26) with round line ends, flat bright fills, small white highlight strokes, no "
+    "gradients, no photorealism. Cheerful pastel palette: coral #FFB4A2, yellow #FFD166, sky blue #8ECAE6, mint "
+    "#95D5B2, lavender #CDB4DB, orange #F4A261. One clear idea, 3-8 objects, cute rounded shapes, generous empty "
+    "space. Plain solid cream background (#FFF8EC), no border or frame. Absolutely no text, letters or numbers."
 )
 
 
@@ -40,67 +37,79 @@ def concurrency() -> int:
         return 6
 
 
-def _prompt(brief: str, context: str) -> str:
-    return f"{STYLE}\n\nScene: {brief}\n(Sermon context, for meaning only - do not write it: {context[:400]})"
-
-
 def _model() -> str:
     return os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-2")
 
 
-def _cache_path(prompt: str) -> Path:
-    return CACHE_DIR / (hashlib.sha256(f"{_model()}|{prompt}".encode()).hexdigest()[:24] + ".png")
+def card_prompt(brief: str) -> str:
+    return f"{CARD_STYLE}\n\nScene: {brief}"
 
 
-def generate(brief: str, context: str, slow_after: float = 90.0) -> bytes:
-    """One picture. Attempts: configured model at medium quality (cut off after `slow_after` s),
-    then the same model at low quality (much faster), then gpt-image-1 as a last resort."""
+def make(prompt: str, *, refs: list[bytes] | None = None, size: str = "1536x1024",
+         transparent: bool = False, slow_after: float = 90.0) -> bytes:
+    """One picture. Attempts: configured model at medium quality, then low quality, then gpt-image-1.
+    With `refs`, the reference images (e.g. photos of the twins) guide the drawing through images.edit."""
     from openai import OpenAI
 
-    prompt = _prompt(brief, context)
-    cached = _cache_path(prompt)
+    refs = refs or []
+    key = hashlib.sha256(f"{_model()}|{size}|{transparent}|{prompt}".encode()
+                         + b"".join(hashlib.sha256(r).digest() for r in refs)).hexdigest()[:24]
+    cached = CACHE_DIR / f"{key}.png"
     if cached.exists():
         return cached.read_bytes()
 
     attempts = [(_model(), "medium", slow_after), (_model(), "low", slow_after), ("gpt-image-1", "low", slow_after * 1.5)]
     last = None
-    for model, quality, timeout in dict.fromkeys(attempts):
-        try:
-            client = OpenAI(timeout=timeout, max_retries=2)  # 429 rate limits are retried by the SDK
-            r = client.images.generate(model=model, prompt=prompt, size="1536x1024", quality=quality, n=1)
-            data = base64.b64decode(r.data[0].b64_json)
-            CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            cached.write_bytes(data)
-            return data
-        except Exception as e:
-            last = e
+    for mdl, quality, timeout in dict.fromkeys(attempts):
+        extra = {"background": "transparent"} if transparent else {}
+        if refs:
+            extra["input_fidelity"] = "high"
+        while True:
+            try:
+                client = OpenAI(timeout=timeout, max_retries=2)
+                if refs:
+                    files = [(f"ref{i}.png", r, "image/png") for i, r in enumerate(refs)]
+                    r = client.images.edit(model=mdl, image=files, prompt=prompt, size=size, quality=quality, **extra)
+                else:
+                    r = client.images.generate(model=mdl, prompt=prompt, size=size, quality=quality, n=1, **extra)
+                data = base64.b64decode(r.data[0].b64_json)
+                CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                cached.write_bytes(data)
+                return data
+            except Exception as e:
+                last = e
+                bad = next((k for k in extra if k in str(e)), None)
+                if bad:  # this model does not take an optional parameter: drop it and retry
+                    extra.pop(bad)
+                    continue
+                break
     raise RuntimeError(f"이미지 생성 실패: {last}")
 
 
 class Batch:
-    """Starts every picture at once in the background; collect the results later with `results()`."""
+    """Runs jobs (name, fn) in the background at once; collect the results later with `results()`."""
 
-    def __init__(self, items: list[dict], log=print):
-        self.log = log
-        self.t0 = time.time()
-        self.pool = ThreadPoolExecutor(max_workers=max(1, min(len(items), concurrency())))
-        self.futures: list[Future] = [self.pool.submit(self._one, it) for it in items]
-        if items:
-            log(f"설명 그림 {len(items)}개 동시 생성 시작 (동시 {min(len(items), concurrency())}개)")
+    def __init__(self, jobs: list[tuple[str, callable]], log=print, what: str = "그림"):
+        self.log, self.what, self.t0 = log, what, time.time()
+        n = max(1, min(len(jobs), concurrency()))
+        self.pool = ThreadPoolExecutor(max_workers=n)
+        self.futures: list[Future] = [self.pool.submit(self._one, name, fn) for name, fn in jobs]
+        if jobs:
+            log(f"{what} {len(jobs)}개 동시 생성 시작 (동시 {n}개)")
 
-    def _one(self, it: dict) -> bytes | None:
+    def _one(self, name, fn):
         start = time.time()
         try:
-            data = generate(it["visual_brief"], it.get("context", ""))
-            self.log(f"그림 완료: {it['concept']} ({time.time() - start:.0f}초)")
+            data = fn()
+            self.log(f"{self.what} 완료: {name} ({time.time() - start:.0f}초)")
             return data
         except Exception as e:
-            self.log(f"그림 생성 실패 ({it['concept']}): {e}")
+            self.log(f"{self.what} 생성 실패 ({name}): {e}")
             return None
 
-    def results(self) -> list[bytes | None]:
+    def results(self) -> list:
         out = [f.result() for f in self.futures]
         self.pool.shutdown(wait=False)
         if self.futures:
-            self.log(f"설명 그림 전체 {time.time() - self.t0:.0f}초 만에 준비 완료")
+            self.log(f"{self.what} 전체 {time.time() - self.t0:.0f}초 만에 준비 완료")
         return out
