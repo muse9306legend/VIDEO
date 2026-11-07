@@ -75,6 +75,10 @@ Passing a saved `plan` skips speech and Claude (used by "고친 계획 적용" a
   `gradio app.py --demo-name demo --watch-dirs editor` (auto-reload: edits apply in about 4 s).
   Server settings come from `GRADIO_SERVER_NAME`, `GRADIO_SERVER_PORT`, `GRADIO_ALLOWED_PATHS` in the bat.
   Do not edit code while the user is rendering a long video: a reload can interrupt the job.
+- `실행.bat` also starts `자동업데이트.bat` (minimized): every 60 s it runs `git pull --ff-only`, so code pushed to
+  GitHub reaches the running UI without a restart. `pipeline.busy()` writes a lock in `jobs/_busy/` during
+  `prepare()` and `render()`; the updater skips pulling while a lock exists (locks older than 6 h are stale).
+- `.bat` files must keep CRLF line endings (`.gitattributes`); `goto` labels break with LF.
 - `.env` is re-read at page load and at the start of every `prepare()`. Never cache API keys or model names
   at import time.
 - There is no automated test suite. To verify a change, render a short clip with a hand-written plan

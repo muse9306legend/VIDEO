@@ -9,12 +9,30 @@ from __future__ import annotations
 import html
 import json
 import time
+import uuid
+from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
 from . import JOBS, ai, characters, images, load_env, media, overlay
+
+
+BUSY_DIR = JOBS / "_busy"
+
+
+@contextmanager
+def busy():
+    """Marks a running job so the auto-updater (자동업데이트.bat) does not pull new code mid-job:
+    a code update would reload the app and interrupt it."""
+    BUSY_DIR.mkdir(parents=True, exist_ok=True)
+    mark = BUSY_DIR / f"{uuid.uuid4().hex}.lock"
+    mark.write_text(datetime.now().isoformat(), encoding="utf-8")
+    try:
+        yield
+    finally:
+        mark.unlink(missing_ok=True)
 
 
 @dataclass
@@ -128,6 +146,11 @@ def layout(plan: dict, pictures: list, sprites: dict, s: Settings, w: int, h: in
 
 
 def prepare(src: str | Path, s: Settings, *, plan: dict | None = None, out: Path | None = None, log=print) -> Job:
+    with busy():
+        return _prepare(src, s, plan=plan, out=out, log=log)
+
+
+def _prepare(src, s: Settings, *, plan: dict | None, out: Path | None, log) -> Job:
     load_env()
     src = Path(src)
     out = out or JOBS / datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -168,6 +191,11 @@ def frame_at(job: Job, t: float):
 
 
 def render(job: Job, log=print, progress=None) -> Path:
+    with busy():
+        return _render(job, log, progress)
+
+
+def _render(job: Job, log, progress) -> Path:
     dst = job.out / "결과영상.mp4"
     total = max(1, int(job.duration * job.fps))
     reader = media.FrameReader(job.src, job.w, job.h, job.fps)

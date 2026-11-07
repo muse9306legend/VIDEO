@@ -16,6 +16,8 @@ rem .env 의 API 키는 미리보기/편집을 누를 때마다 다시 읽습니
 set GRADIO_SERVER_NAME=127.0.0.1
 set GRADIO_SERVER_PORT=7860
 set GRADIO_ALLOWED_PATHS=%~dp0jobs
+rem GitHub 에 올라온 새 코드를 1분마다 자동으로 받아옵니다(작은 창으로 따로 실행).
+start "자동 업데이트" /min cmd /c 자동업데이트.bat
 start "" cmd /c "timeout /t 10 >nul & start http://127.0.0.1:7860"
 .venv\Scripts\gradio.exe app.py --demo-name demo --watch-dirs editor
 pause
