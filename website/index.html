@@ -121,7 +121,7 @@ footer ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 footer small{display:block;margin-top:32px;color:#A79E93}
 @media (max-width:720px){footer .cols{grid-template-columns:1fr}}
 /* game */
-.game-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.lede{color:var(--muted);margin:6px 0 0}
 .game-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
 .game-bar .stat{font-family:"Gaegu",cursive;font-weight:700;font-size:1.3rem;padding:6px 14px;border:2px solid var(--ink);border-radius:999px;background:var(--paper)}
 .game-bar .seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
@@ -140,7 +140,6 @@ footer small{display:block;margin-top:32px;color:#A79E93}
 .card .b .ko{font-size:clamp(1.2rem,4.2vw,1.9rem)}
 .card .b .emo{font-size:clamp(2rem,8vw,3.2rem);line-height:1}
 .card .b small{display:block;font-family:"Gowun Dodum",sans-serif;font-weight:400;font-size:clamp(.65rem,2.2vw,.85rem);color:var(--muted);margin-top:4px}
-.card.done .b{background:#E6F7E4}
 .card.roo.done .b{background:var(--roo-soft)} .card.zi.done .b{background:var(--zi-soft)}
 .card:focus-visible .f,.card:focus-visible .b{outline:3px solid var(--zi);outline-offset:2px}
 .card.shake .in{animation:shake .35s}
@@ -151,8 +150,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
 .game-win{display:none;margin-top:20px;padding:20px;text-align:center;max-width:720px}
 .game-win.show{display:block}
 .game-win h3{font-size:2.2rem}
-@media (prefers-reduced-motion:reduce){.card .in{transition:none}.card.shake .in{animation:none}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -265,13 +263,9 @@ footer small{display:block;margin-top:32px;color:#A79E93}
 
   <section id="game">
     <div class="wrap">
-      <div class="game-head">
-        <div>
-          <p class="eyebrow">Roo &amp; Zi Hangul Match</p>
-          <h2>루지의 한글 짝꿍 게임</h2>
-          <p style="color:var(--muted);margin:6px 0 0">카드를 두 장씩 뒤집어 <b>한글 단어</b>와 <b>그림</b>을 짝지어 보세요. 짝을 맞히면 소리로 읽어 줘요!</p>
-        </div>
-      </div>
+      <p class="eyebrow">Roo &amp; Zi Hangul Match</p>
+      <h2>루지의 한글 짝꿍 게임</h2>
+      <p class="lede">카드를 두 장씩 뒤집어 <b>한글 단어</b>와 <b>그림</b>을 짝지어 보세요. 짝을 맞히면 소리로 읽어 줘요!</p>
       <div class="game-bar">
         <span class="seg" role="group" aria-label="난이도">
           <button type="button" data-level="6" aria-pressed="true">쉬움</button>
