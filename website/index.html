@@ -120,6 +120,38 @@ footer a{color:#EDE6DB}
 footer ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 footer small{display:block;margin-top:32px;color:#A79E93}
 @media (max-width:720px){footer .cols{grid-template-columns:1fr}}
+/* game */
+.game-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.game-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+.game-bar .stat{font-family:"Gaegu",cursive;font-weight:700;font-size:1.3rem;padding:6px 14px;border:2px solid var(--ink);border-radius:999px;background:var(--paper)}
+.game-bar .seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.game-bar .seg button{all:unset;cursor:pointer;font-family:"Gaegu",cursive;font-weight:700;font-size:1.2rem;padding:6px 14px}
+.game-bar .seg button[aria-pressed="true"]{background:var(--roo-soft)}
+.game-bar .seg button:focus-visible{outline:3px solid var(--zi);outline-offset:-3px}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px;max-width:720px}
+@media (max-width:520px){.board{grid-template-columns:repeat(3,1fr);gap:8px}}
+.card{all:unset;box-sizing:border-box;position:relative;aspect-ratio:3/4;cursor:pointer;perspective:800px}
+.card .in{position:absolute;inset:0;transition:transform .35s;transform-style:preserve-3d}
+.card.open .in,.card.done .in{transform:rotateY(180deg)}
+.card .f,.card .b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:2.5px solid var(--ink);border-radius:16px;display:grid;place-items:center;text-align:center;padding:6px;box-shadow:3px 3px 0 rgba(46,42,38,.18)}
+.card .f{background:repeating-linear-gradient(45deg,var(--roo-soft) 0 12px,var(--zi-soft) 12px 24px)}
+.card .f svg{width:56%;height:auto}
+.card .b{background:var(--paper);transform:rotateY(180deg);font-family:"Gaegu",cursive;font-weight:700;line-height:1.05}
+.card .b .ko{font-size:clamp(1.2rem,4.2vw,1.9rem)}
+.card .b .emo{font-size:clamp(2rem,8vw,3.2rem);line-height:1}
+.card .b small{display:block;font-family:"Gowun Dodum",sans-serif;font-weight:400;font-size:clamp(.65rem,2.2vw,.85rem);color:var(--muted);margin-top:4px}
+.card.done .b{background:#E6F7E4}
+.card.roo.done .b{background:var(--roo-soft)} .card.zi.done .b{background:var(--zi-soft)}
+.card:focus-visible .f,.card:focus-visible .b{outline:3px solid var(--zi);outline-offset:2px}
+.card.shake .in{animation:shake .35s}
+@keyframes shake{0%,100%{translate:0}25%{translate:-5px}75%{translate:5px}}
+.bubble-row{display:flex;gap:12px;align-items:center;margin-top:18px;min-height:64px}
+.bubble-row img{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--ink);background:var(--paper)}
+.bubble{font-family:"Gaegu",cursive;font-weight:700;font-size:1.4rem;padding:8px 16px;border:2px solid var(--ink);border-radius:18px;background:var(--paper)}
+.game-win{display:none;margin-top:20px;padding:20px;text-align:center;max-width:720px}
+.game-win.show{display:block}
+.game-win h3{font-size:2.2rem}
+@media (prefers-reduced-motion:reduce){.card .in{transition:none}.card.shake .in{animation:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -135,6 +167,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
       <li><a href="#film">2027</a></li>
       <li><a href="#videos">영상</a></li>
       <li><a href="#hangul">한글 산책</a></li>
+      <li><a href="#game">게임</a></li>
       <li><a href="#shop">루지몰</a></li>
       <li><a href="#about">회사소개</a></li>
     </ul>
@@ -230,6 +263,38 @@ footer small{display:block;margin-top:32px;color:#A79E93}
     </div>
   </section>
 
+  <section id="game">
+    <div class="wrap">
+      <div class="game-head">
+        <div>
+          <p class="eyebrow">Roo &amp; Zi Hangul Match</p>
+          <h2>루지의 한글 짝꿍 게임</h2>
+          <p style="color:var(--muted);margin:6px 0 0">카드를 두 장씩 뒤집어 <b>한글 단어</b>와 <b>그림</b>을 짝지어 보세요. 짝을 맞히면 소리로 읽어 줘요!</p>
+        </div>
+      </div>
+      <div class="game-bar">
+        <span class="seg" role="group" aria-label="난이도">
+          <button type="button" data-level="6" aria-pressed="true">쉬움</button>
+          <button type="button" data-level="8" aria-pressed="false">어려움</button>
+        </span>
+        <span class="stat">뒤집기 <b id="g-moves">0</b></span>
+        <span class="stat">⏱ <b id="g-time">0</b>초</span>
+        <span class="stat">최고 <b id="g-best">-</b></span>
+        <button class="btn green" type="button" id="g-reset">다시 섞기</button>
+      </div>
+      <div class="bubble-row" aria-live="polite">
+        <img id="g-face" src="img/roo.webp" alt="" width="56" height="56">
+        <span class="bubble" id="g-say">루루: 가 보자고! 카드를 눌러 봐!</span>
+      </div>
+      <div class="board" id="g-board" aria-label="카드 판"></div>
+      <div class="game-win paper" id="g-win" aria-live="polite">
+        <h3>🎉 다 맞혔어요!</h3>
+        <p id="g-result"></p>
+        <button class="btn roo" type="button" id="g-again">한 판 더!</button>
+      </div>
+    </div>
+  </section>
+
   <section id="shop">
     <div class="wrap">
       <div class="shop-head">
@@ -317,5 +382,6 @@ footer small{display:block;margin-top:32px;color:#A79E93}
   });
   document.getElementById('y').textContent = new Date().getFullYear();
 </script>
+<script src="game.js" defer></script>
 </body>
 </html>
