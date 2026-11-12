@@ -10,3 +10,5 @@ __pycache__/
 *.pyc
 *.mp4
 *.wav
+# keep finished animation clips
+!animation/**/*.mp4
