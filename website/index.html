@@ -5,7 +5,7 @@
 <script src="analytics.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>쌍둥이루지 TWINROOZI</title>
-<meta name="description" content="쌍둥이루지 TwinRoozi — 한국의 쌍둥이 크리에이터. 유튜브 영상, 루지의 한글 산책, 루지몰 쇼핑을 한곳에서.">
+<meta name="description" content="쌍둥이루지 TwinRoozi — 한국의 쌍둥이 크리에이터. 유튜브 영상, 루지의 한글 산책, 쌍둥이루지몰 쇼핑을 한곳에서.">
 <meta property="og:title" content="쌍둥이루지 TWINROOZI">
 <meta property="og:description" content="Korean twin creators — videos, learn Korean with Roo & Zi, and the TwinRoozi mall.">
 <meta property="og:image" content="https://www.twinroozi.com/img/og.jpg">
@@ -74,15 +74,16 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,248,236,.92);backdro
 @media (max-width:720px){.twins{grid-template-columns:1fr}.twin{grid-template-columns:110px 1fr}.twin img{width:110px;height:160px}}
 
 /* channels */
-.channels{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:32px}
+.channels{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:32px}
 .ch{padding:16px;display:flex;flex-direction:column;gap:12px}
 .ch .ph{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:2px solid var(--ink);background:#000;cursor:pointer}
 .ch .ph button{all:unset;position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,var(--roo-soft),var(--zi-soft));font-family:"Gaegu",cursive;font-weight:700;font-size:1.3rem;text-align:center;cursor:pointer}
-.ch .ph button span{display:inline-grid;place-items:center;width:64px;height:44px;border-radius:12px;background:#FF0033;color:#fff;font-size:1.4rem;margin:0 auto 8px;border:2px solid var(--ink)}
+.ch .ph button span{display:grid;place-items:center;width:64px;height:44px;border-radius:12px;background:#FF0033;color:#fff;font-size:1.4rem;margin:0 auto 8px;border:2px solid var(--ink)}
 .ch .ph iframe{width:100%;height:100%;border:0}
 .ch h3{font-size:1.7rem}
 .ch p{margin:0;color:var(--muted);font-size:.95rem;flex:1}
-@media (max-width:900px){.channels{grid-template-columns:1fr}}
+@media (max-width:1100px){.channels{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){.channels{grid-template-columns:1fr}}
 
 /* featured film (Vimeo) */
 .film{padding-top:24px}
@@ -206,7 +207,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
       <li><a href="#hangul">한글 산책</a></li>
       <li><a href="#edu">교육</a></li>
       <li><a href="#game">게임</a></li>
-      <li><a href="#shop">루지몰</a></li>
+      <li><a href="#shop">쌍둥이루지몰</a></li>
       <li><a href="#about">회사소개</a></li>
     </ul>
     <a class="btn zi" href="https://www.youtube.com/@twinroozi?sub_confirmation=1" target="_blank" rel="noopener">구독하기</a>
@@ -223,7 +224,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
           <span lang="en">Korean twin creators sharing K-food, K-culture and everyday Korea.</span></p>
         <div class="cta">
           <a class="btn roo" href="#videos">▶ 영상 보기</a>
-          <a class="btn green" href="https://smartstore.naver.com/twinrz" target="_blank" rel="noopener">🛍 루지몰 가기</a>
+          <a class="btn green" href="https://smartstore.naver.com/twinrz" target="_blank" rel="noopener">🛍 쌍둥이루지몰 가기</a>
         </div>
       </div>
       <div class="paper hero-img"><img src="img/hero.webp" alt="손을 흔드는 쌍둥이루지 캐릭터 루루와 지지" width="1600" height="900" fetchpriority="high"></div>
@@ -267,16 +268,22 @@ footer small{display:block;margin-top:32px;color:#A79E93}
           <a class="btn roo" href="https://www.youtube.com/@twinroozi" target="_blank" rel="noopener">채널 가기</a>
         </article>
         <article class="paper ch">
+          <div class="ph" data-list="UUWKmBNqCPnHsxj8fOhvdt4w"><button type="button"><div><span>▶</span>최신 영상 보기</div></button></div>
+          <h3>조안나 ZOANA</h3>
+          <p>조안나ZOANA 채널.</p>
+          <a class="btn" href="https://www.youtube.com/@zoanabak" target="_blank" rel="noopener">채널 가기</a>
+        </article>
+        <article class="paper ch">
           <div class="ph" data-list="UUkouzXi9PEzux5jYsw1wyHg"><button type="button"><div><span>▶</span>최신 영상 보기</div></button></div>
           <h3>해피봄봄</h3>
           <p>HappyBomBom 해피봄봄 채널.</p>
           <a class="btn zi" href="https://www.youtube.com/@happybombom" target="_blank" rel="noopener">채널 가기</a>
         </article>
         <article class="paper ch">
-          <div class="ph" data-list="UUWKmBNqCPnHsxj8fOhvdt4w"><button type="button"><div><span>▶</span>최신 영상 보기</div></button></div>
-          <h3>조안나 ZOANA</h3>
-          <p>조안나ZOANA 채널.</p>
-          <a class="btn" href="https://www.youtube.com/@zoanabak" target="_blank" rel="noopener">채널 가기</a>
+          <div class="ph" data-list="UULU6ClmBxmKXOp-62yWu6Mg"><button type="button"><div><span>▶</span>최신 영상 보기</div></button></div>
+          <h3>달달영심이</h3>
+          <p>달달영심이 ASMR 먹방 채널.</p>
+          <a class="btn green" href="https://www.youtube.com/@daldalyoungsimi" target="_blank" rel="noopener">채널 가기</a>
         </article>
       </div>
     </div>
@@ -319,7 +326,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
       </div>
       <h3 class="edu-sub">매 편 쓰는 기본 인사</h3>
       <div class="words" id="edu-basics"></div>
-      <p style="margin-top:20px"><a class="btn roo" href="mailto:twinroozicompany@gmail.com?subject=%EB%A3%A8%EC%A7%80%20%ED%95%9C%EA%B8%80%20%EA%B5%90%EC%8B%A4%20%EB%AC%B8%EC%9D%98">✉ 교육 프로그램 문의</a></p>
+      <p style="margin-top:20px"><a class="btn roo" href="mailto:teruha@twinroozi.com?subject=%EB%A3%A8%EC%A7%80%20%ED%95%9C%EA%B8%80%20%EA%B5%90%EC%8B%A4%20%EB%AC%B8%EC%9D%98">✉ 교육 프로그램 문의</a></p>
     </div>
   </section>
 
@@ -356,15 +363,15 @@ footer small{display:block;margin-top:32px;color:#A79E93}
       <div class="shop-head">
         <div>
           <p class="eyebrow">TwinRoozi Mall</p>
-          <h2>루지몰</h2>
+          <h2>쌍둥이루지몰</h2>
           <p>쌍둥이루지 × 조안나의 재미있는 쇼핑몰. 구매는 네이버 스마트스토어에서 안전하게 할 수 있어요.</p>
         </div>
         <a class="btn green" href="https://smartstore.naver.com/twinrz" target="_blank" rel="noopener">스마트스토어 전체 보기 →</a>
       </div>
       <div class="shop-feature">
-        <div class="paper vimeo tall" data-vimeo="1246450841" data-title="루지몰 제품 영상">
-          <button type="button" aria-label="루지몰 제품 영상 재생">
-            <span class="poster">루지몰 제품 영상</span>
+        <div class="paper vimeo tall" data-vimeo="1246450841" data-title="쌍둥이루지몰 제품 영상">
+          <button type="button" aria-label="쌍둥이루지몰 제품 영상 재생">
+            <span class="poster">쌍둥이루지몰 제품 영상</span>
             <span class="play" aria-hidden="true">▶</span>
           </button>
         </div>
@@ -406,23 +413,24 @@ footer small{display:block;margin-top:32px;color:#A79E93}
     <div class="cols">
       <div>
         <h4>TwinRoozi Company</h4>
-        <p>서울 서초구 논현로7길 34, 2층 201호<br>
+        <p>서울 금천구 디지털로10길 78, 1337-22호 (한국산업지능화협회)<br>
           Tel <a href="tel:070-7576-4564">070-7576-4564</a><br>
-          <a href="mailto:twinroozicompany@gmail.com">twinroozicompany@gmail.com</a></p>
+          <a href="mailto:teruha@twinroozi.com">teruha@twinroozi.com</a></p>
       </div>
       <div>
         <h4>YouTube</h4>
         <ul>
           <li><a href="https://www.youtube.com/@twinroozi" target="_blank" rel="noopener">쌍둥이루지</a></li>
-          <li><a href="https://www.youtube.com/@happybombom" target="_blank" rel="noopener">해피봄봄</a></li>
           <li><a href="https://www.youtube.com/@zoanabak" target="_blank" rel="noopener">조안나 ZOANA</a></li>
+          <li><a href="https://www.youtube.com/@happybombom" target="_blank" rel="noopener">해피봄봄</a></li>
+          <li><a href="https://www.youtube.com/@daldalyoungsimi" target="_blank" rel="noopener">달달영심이</a></li>
         </ul>
       </div>
       <div>
         <h4>Shop &amp; SNS</h4>
         <ul>
-          <li><a href="https://smartstore.naver.com/twinrz" target="_blank" rel="noopener">루지몰 (네이버 스마트스토어)</a></li>
-          <li><a href="https://www.instagram.com/twinroozicompany/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://smartstore.naver.com/twinrz" target="_blank" rel="noopener">쌍둥이루지몰 (네이버 스마트스토어)</a></li>
+          <li><a href="https://www.instagram.com/twinroozicompany/" target="_blank" rel="noopener">인스타그램</a></li>
         </ul>
       </div>
     </div>
