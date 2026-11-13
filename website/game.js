@@ -1,19 +1,8 @@
 // 루지의 한글 짝꿍 게임: match each Hangul word card with its picture card.
 (function () {
-  var WORDS = [ // [한글, 그림, 로마자, English]
-    ['안녕하세요', '👋', 'annyeonghaseyo', 'Hello'],
-    ['편의점', '🏪', 'pyeonuijeom', 'convenience store'],
-    ['삼각김밥', '🍙', 'samgak-gimbap', 'triangle kimbap'],
-    ['지하철', '🚇', 'jihacheol', 'subway'],
-    ['횡단보도', '🚸', 'hoengdanbodo', 'crosswalk'],
-    ['라면', '🍜', 'ramyeon', 'ramen'],
-    ['떡볶이', '🌶️', 'tteokbokki', 'spicy rice cakes'],
-    ['바나나우유', '🍌', 'banana uyu', 'banana milk'],
-    ['한강', '🌉', 'hangang', 'Han River'],
-    ['노래', '🎤', 'norae', 'song'],
-    ['감사합니다', '🙏', 'gamsahamnida', 'Thank you'],
-    ['친구', '👭', 'chingu', 'friend']
-  ];
+  // Word pool = every word in episodes.js (기본 인사 + all episodes), so new episodes join the game automatically.
+  var H = window.HANGUL || { basics: [], episodes: [] };
+  var WORDS = H.episodes.reduce(function (all, ep) { return all.concat(ep.words); }, H.basics.slice());
   var CHEERS = ['맞았어!', '최고야!', '대박!', '잘했어!', '천재인데?'];
   var MISS = ['앗, 다시!', '아깝다~', '한 번 더!', '괜찮아, 다시 해 보자!'];
   var HIDDEN = '뒤집힌 카드';

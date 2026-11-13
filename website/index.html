@@ -44,7 +44,8 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,248,236,.92);backdro
 .nav ul{display:flex;gap:4px;list-style:none;margin:0;padding:0}
 .nav ul a{font-family:"Gaegu",cursive;font-weight:700;font-size:1.2rem;text-decoration:none;padding:6px 12px;border-radius:999px}
 .nav ul a:hover{background:var(--roo-soft)}
-@media (max-width:720px){.nav ul{display:none}}
+.nav ul a,.btn{white-space:nowrap}
+@media (max-width:960px){.nav ul{display:none}}
 
 /* hero */
 .hero{padding:40px 0 64px}
@@ -99,6 +100,32 @@ header{position:sticky;top:0;z-index:10;background:rgba(255,248,236,.92);backdro
 .hangul{background:var(--paper);border-top:2px dashed var(--line);border-bottom:2px dashed var(--line)}
 .hangul-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}
 .hangul video{width:100%;border-radius:18px;border:2.5px solid var(--ink);box-shadow:var(--shadow);background:#000}
+#ep-player .vimeo{margin-top:0}
+.ep-now{font-size:1.6rem;margin-top:14px}
+.consonant{display:inline-grid;place-items:center;width:2.2em;height:2.2em;margin-left:6px;border:2px solid var(--ink);border-radius:12px;background:var(--roo-soft);font-family:"Gowun Dodum",sans-serif;font-size:1.6rem}
+.eps{display:flex;gap:12px;overflow-x:auto;margin-top:28px;padding:4px 4px 10px}
+.ep{all:unset;box-sizing:border-box;flex:0 0 auto;min-width:118px;padding:10px 14px;border:2px solid var(--ink);border-radius:16px;background:var(--cream);cursor:pointer;display:grid;gap:2px;font-family:"Gaegu",cursive;font-weight:700;line-height:1.1}
+.ep b{font-size:1rem;color:var(--muted)} .ep span{font-size:1.5rem} .ep em{font-style:normal;font-size:1rem;color:var(--zi)}
+.ep[aria-pressed="true"]{background:var(--roo-soft);box-shadow:3px 3px 0 var(--ink)}
+.ep:focus-visible{outline:3px solid var(--zi);outline-offset:2px}
+.ep.soon{cursor:default;opacity:.55;border-style:dashed} .ep.soon em{color:var(--muted)}
+/* education */
+.steps{list-style:none;padding:0;margin:28px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.steps li{padding:18px}
+.steps b{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--zi-soft);border:2px solid var(--ink);font-family:"Gaegu",cursive;font-size:1.3rem}
+.steps h3{font-size:1.5rem;margin-top:10px}
+.steps p{margin:6px 0 0;color:var(--muted);font-size:.95rem}
+@media (max-width:860px){.steps{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.steps{grid-template-columns:1fr}}
+.edu-sub{font-size:1.7rem;margin-top:36px}
+.table-wrap{overflow-x:auto;margin-top:14px}
+.curriculum{width:100%;border-collapse:collapse;min-width:520px}
+.curriculum th,.curriculum td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line)}
+.curriculum thead th{font-family:"Gaegu",cursive;font-size:1.2rem;background:var(--cream)}
+.curriculum tbody tr:last-child th,.curriculum tbody tr:last-child td{border-bottom:0}
+.curriculum td.jamo{font-size:1.4rem}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;border:1.5px solid var(--line);font-size:.85rem;color:var(--muted)}
+.tag.on{background:#C9F2C7;border-color:var(--ink);color:var(--ink)}
 .words{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
 .word{padding:8px 16px;border:2px solid var(--ink);border-radius:14px;background:var(--cream);font-family:"Gaegu",cursive;font-weight:700;font-size:1.5rem;line-height:1.1}
 .word small{display:block;font-family:"Gowun Dodum",sans-serif;font-weight:400;font-size:.8rem;color:var(--muted)}
@@ -171,6 +198,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
       <li><a href="#film">2027</a></li>
       <li><a href="#videos">영상</a></li>
       <li><a href="#hangul">한글 산책</a></li>
+      <li><a href="#edu">교육</a></li>
       <li><a href="#game">게임</a></li>
       <li><a href="#shop">루지몰</a></li>
       <li><a href="#about">회사소개</a></li>
@@ -249,21 +277,43 @@ footer small{display:block;margin-top:32px;color:#A79E93}
   </section>
 
   <section id="hangul" class="hangul">
-    <div class="wrap hangul-grid">
-      <video controls playsinline preload="none" poster="img/hangul_ep01.jpg" aria-label="루지의 한글 산책 EP01 편의점">
-        <source src="img/hangul_ep01.mp4" type="video/mp4">
-      </video>
-      <div>
-        <p class="eyebrow">Learn Korean with Roo &amp; Zi</p>
-        <h2>루지의 한글 산책</h2>
-        <p>루지와 함께 한국 곳곳을 걸으며 한글 단어를 하나씩 모아요. 첫 번째 산책은 <b>편의점</b>!</p>
-        <div class="words">
-          <span class="word">편의점<small>pyeonuijeom · convenience store</small></span>
-          <span class="word">삼각김밥<small>samgak-gimbap · triangle kimbap</small></span>
-          <span class="word">맛있어<small>masisseo · it's delicious</small></span>
+    <div class="wrap">
+      <div class="hangul-grid">
+        <div id="ep-player"></div>
+        <div>
+          <p class="eyebrow">Learn Korean with Roo &amp; Zi</p>
+          <h2>루지의 한글 산책</h2>
+          <p>루지와 함께 한국 곳곳을 걸으며 한글 단어를 하나씩 모아요.</p>
+          <h3 class="ep-now" id="ep-title"></h3>
+          <div class="words" id="ep-words"></div>
+          <p class="hand" style="font-size:1.3rem">오늘의 자음 <span class="consonant" id="ep-consonant"></span></p>
         </div>
-        <p class="hand" style="font-size:1.4rem">다음 산책: 지하철 · 횡단보도 · 한강</p>
       </div>
+      <div class="eps" id="ep-list" role="group" aria-label="에피소드 선택"></div>
+    </div>
+  </section>
+
+  <section id="edu">
+    <div class="wrap">
+      <p class="eyebrow">Roo &amp; Zi Korean Class</p>
+      <h2>루지 한글 교실</h2>
+      <p class="lede">루지 애니메이션 한 편이 곧 한 번의 수업이에요. 매 편 한국의 장소 한 곳에서 단어를 모으고, 소리 내어 읽고, 게임으로 복습해요.</p>
+      <ol class="steps">
+        <li class="paper"><b>1</b><h3>애니메이션 보기</h3><p>루루와 지지가 한국의 장소를 직접 겪어요.</p></li>
+        <li class="paper"><b>2</b><h3>단어 카드</h3><p>한글 · 로마자 · 영어 3줄로 단어를 익혀요.</p></li>
+        <li class="paper"><b>3</b><h3>오늘의 자음</h3><p>단어 첫 글자의 자음 모양을 그림처럼 외워요.</p></li>
+        <li class="paper"><b>4</b><h3>게임으로 복습</h3><p><a href="#game">짝꿍 게임</a>에서 소리를 들으며 짝을 맞혀요.</p></li>
+      </ol>
+      <h3 class="edu-sub">커리큘럼</h3>
+      <div class="table-wrap paper">
+        <table class="curriculum">
+          <thead><tr><th scope="col">회차</th><th scope="col">장소</th><th scope="col">단어</th><th scope="col">자음</th><th scope="col">상태</th></tr></thead>
+          <tbody id="edu-curriculum"></tbody>
+        </table>
+      </div>
+      <h3 class="edu-sub">매 편 쓰는 기본 인사</h3>
+      <div class="words" id="edu-basics"></div>
+      <p style="margin-top:20px"><a class="btn roo" href="mailto:twinroozicompany@gmail.com?subject=%EB%A3%A8%EC%A7%80%20%ED%95%9C%EA%B8%80%20%EA%B5%90%EC%8B%A4%20%EB%AC%B8%EC%9D%98">✉ 교육 프로그램 문의</a></p>
     </div>
   </section>
 
@@ -399,6 +449,7 @@ footer small{display:block;margin-top:32px;color:#A79E93}
   });
   document.getElementById('y').textContent = new Date().getFullYear();
 </script>
+<script src="episodes.js" defer></script>
 <script src="game.js" defer></script>
 </body>
 </html>
