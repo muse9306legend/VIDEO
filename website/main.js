@@ -10,6 +10,17 @@ document.querySelectorAll('.ph[data-list]').forEach(function (box) {
     box.replaceChildren(f);
   });
 });
+// A single YouTube video (data-video = video ID), also loaded only when clicked.
+document.querySelectorAll('.ph[data-video]').forEach(function (box) {
+  box.querySelector('button').addEventListener('click', function () {
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(box.dataset.video) + '?autoplay=1&rel=0';
+    f.title = box.dataset.title || 'YouTube 영상';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture';
+    f.allowFullscreen = true;
+    box.replaceChildren(f);
+  });
+});
 // Vimeo: load the player only when clicked.
 document.querySelectorAll('.vimeo[data-vimeo]').forEach(function (box) {
   box.querySelector('button').addEventListener('click', function () {
