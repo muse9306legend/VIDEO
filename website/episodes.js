@@ -4,6 +4,8 @@
 //   1) youtube: 영상 ID 를 넣고   (https://youtu.be/AbCdEf12345  →  'AbCdEf12345')
 //   2) status: '공개' 로 바꾸면 끝.
 // 그러면 한글 산책(영상 + 단어 카드), 교육 프로그램 커리큘럼, 짝꿍 게임 단어가 함께 바뀝니다.
+// 고친 뒤에는 저장소 맨 위 폴더에서  node scripts/site_seo.js  를 실행하세요
+// (검색엔진·AI용 정적 HTML, llms.txt, sitemap.xml 이 함께 갱신됩니다).
 //
 // words: [한글, 그림(이모지), 로마자, English]
 window.HANGUL = {

@@ -1,0 +1,6 @@
+# 모든 검색엔진과 AI 크롤러의 수집을 허용합니다.
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://twinroozi.com/sitemap.xml
