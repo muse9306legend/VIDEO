@@ -2,7 +2,8 @@
 //   - static HTML inside index.html between <!-- static:NAME --> markers (curriculum, latest episode words, basics)
 //     so search engines and AI crawlers that do not run JavaScript still see the content
 //   - website/llms.txt (summary for AI assistants)
-//   - website/sitemap.xml lastmod
+//   - video structured data (VideoObject) for released episodes
+//   - website/sitemap.xml with a video sitemap of every video on the page
 // Run after editing episodes.js:  node scripts/site_seo.js
 const fs = require('fs');
 const path = require('path');
@@ -19,12 +20,27 @@ const live = ep => ep.status === '공개' && (ep.youtube || ep.video);
 const chips = ws => ws.map(w => `<span class="word">${esc(w[0])}<small>${esc(w[2])} · ${esc(w[3])}</small></span>`).join('');
 const latest = episodes.filter(live).pop() || episodes[0];
 const today = new Date().toISOString().slice(0, 10);
+const SITE = 'https://twinroozi.com/';
 
 // 1) static blocks in index.html (the same markup episodes.js renders at runtime)
 const blocks = {
   title: `${label(latest)} · ${esc(latest.title)}`,
   words: chips(latest.words),
   basics: chips(basics),
+  ldvideos: (() => {
+    const vids = episodes.filter(live).filter(e => e.published).map(e => ({
+      '@type': 'VideoObject',
+      name: `루지의 한글 산책 ${label(e)} ${e.place} — ${e.title}`,
+      description: `쌍둥이 루루와 지지가 ${e.place}에서 한국어 단어를 배워요: ${e.words.map(w => `${w[0]}(${w[3]})`).join(', ')}.`,
+      thumbnailUrl: e.youtube ? `https://i.ytimg.com/vi/${e.youtube}/hqdefault.jpg` : SITE + e.poster,
+      uploadDate: e.published,
+      ...(e.duration ? { duration: e.duration } : {}),
+      ...(e.youtube ? { embedUrl: `https://www.youtube.com/embed/${e.youtube}` } : { contentUrl: SITE + e.video }),
+      inLanguage: 'ko', isFamilyFriendly: true,
+      publisher: { '@id': SITE + '#org' }
+    }));
+    return vids.length ? `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': vids }).replace(/</g, '\\u003c')}</script>` : '';
+  })(),
   curriculum: episodes.map(ep => `<tr><th scope="row">${label(ep)}</th><td>${esc(ep.place)}</td><td>${ep.words.map(w => esc(w[0])).join(', ')}</td><td class="jamo">${esc(ep.consonant)}</td><td>${live(ep) ? '<span class="tag on">공개</span>' : '<span class="tag">준비 중</span>'}</td></tr>`).join('')
 };
 const indexPath = path.join(site, 'index.html');
@@ -75,8 +91,39 @@ ${epLines}
 `;
 fs.writeFileSync(path.join(site, 'llms.txt'), llms);
 
-// 3) sitemap lastmod
-const smPath = path.join(site, 'sitemap.xml');
-fs.writeFileSync(smPath, fs.readFileSync(smPath, 'utf8').replace(/<lastmod>[^<]*<\/lastmod>/g, `<lastmod>${today}</lastmod>`));
+// 3) sitemap.xml with a video sitemap (Google needs thumbnail, title, description and a player or file URL)
+const FEATURED = [ // videos on the page that are not episodes (channel cards, films)
+  { title: 'TWINROOZI 2027', description: '쌍둥이루지 TWINROOZI 2027 영상', thumb: SITE + 'img/vimeo_2027.webp', player: 'https://player.vimeo.com/video/1246242300' },
+  { title: '명화 먹방 진주 귀걸이를 한 소녀 - 해피봄봄', description: '해피봄봄 HappyBomBom 명화 먹방: 진주 귀걸이를 한 소녀와 스포츠볼젤리', thumb: 'https://i.ytimg.com/vi/-sx51duVoVY/hqdefault.jpg', player: 'https://www.youtube.com/embed/-sx51duVoVY' },
+  { title: '명화 먹방 클레오파트라 - 달달영심이', description: '달달영심이 DalDalYoungsimi ASMR 명화 먹방: 클레오파트라', thumb: 'https://i.ytimg.com/vi/dI37nK_vMOY/hqdefault.jpg', player: 'https://www.youtube.com/embed/dI37nK_vMOY' }
+];
+const xml = s => esc(s).replace(/'/g, '&apos;');
+const epVideos = episodes.filter(live).map(e => ({
+  title: `루지의 한글 산책 ${label(e)} ${e.place} — ${e.title}`,
+  description: `쌍둥이 루루와 지지가 ${e.place}에서 한국어 단어를 배워요: ${e.words.map(w => w[0]).join(', ')}`,
+  thumb: e.youtube ? `https://i.ytimg.com/vi/${e.youtube}/hqdefault.jpg` : SITE + e.poster,
+  ...(e.youtube ? { player: `https://www.youtube.com/embed/${e.youtube}` } : { content: SITE + e.video }),
+  published: e.published, family: true
+}));
+const videoTags = [...epVideos, ...FEATURED].map(v => `
+    <video:video>
+      <video:thumbnail_loc>${xml(v.thumb)}</video:thumbnail_loc>
+      <video:title>${xml(v.title)}</video:title>
+      <video:description>${xml(v.description)}</video:description>
+      ${v.content ? `<video:content_loc>${xml(v.content)}</video:content_loc>` : `<video:player_loc>${xml(v.player)}</video:player_loc>`}${v.published ? `
+      <video:publication_date>${v.published}</video:publication_date>` : ''}${v.family ? `
+      <video:family_friendly>yes</video:family_friendly>` : ''}
+    </video:video>`).join('');
+fs.writeFileSync(path.join(site, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>${SITE}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>${videoTags}
+  </url>
+  <url><loc>${SITE}llms.txt</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>
+</urlset>
+`);
 
 console.log(`updated index.html static blocks (latest ${label(latest)}), llms.txt, sitemap.xml (${today})`);

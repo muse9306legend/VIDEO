@@ -2,7 +2,7 @@
 //
 // 새 애니메이션을 유튜브에 올렸으면 아래 목록에서 그 회차를 찾아:
 //   1) youtube: 영상 ID 를 넣고   (https://youtu.be/AbCdEf12345  →  'AbCdEf12345')
-//   2) status: '공개' 로 바꾸면 끝.
+//   2) status: '공개', published: '올린 날짜(YYYY-MM-DD)' 로 바꾸면 끝.
 // 그러면 한글 산책(영상 + 단어 카드), 교육 프로그램 커리큘럼, 짝꿍 게임 단어가 함께 바뀝니다.
 // 고친 뒤에는 저장소 맨 위 폴더에서  node scripts/site_seo.js  를 실행하세요
 // (검색엔진·AI용 정적 HTML, llms.txt, sitemap.xml 이 함께 갱신됩니다).
@@ -17,7 +17,7 @@ window.HANGUL = {
   episodes: [
     {
       no: 1, place: '편의점', title: '편의점에서 삼각김밥', status: '공개', consonant: 'ㅍ',
-      youtube: '', video: 'img/hangul_ep01.mp4', poster: 'img/hangul_ep01.jpg',
+      youtube: '', video: 'img/hangul_ep01.mp4', poster: 'img/hangul_ep01.jpg', published: '2026-11-12', duration: 'PT5S',
       words: [
         ['편의점', '🏪', 'pyeonuijeom', 'convenience store'],
         ['삼각김밥', '🍙', 'samgak-gimbap', 'triangle kimbap'],
