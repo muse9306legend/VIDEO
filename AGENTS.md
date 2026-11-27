@@ -1,5 +1,7 @@
 # AGENTS.md — 키즈 유튜브 AI 편집기
 
+> **새 작업 창(Codex 포함)은 먼저 `docs/HANDOFF.md`와 `docs/작업지침.md`를 읽는다.** 이 저장소의 현재 주 업무는 트윈루지 홈페이지(`website/`)·영상·교육이며, 아래는 그중 영상 편집기 부분의 규칙이다.
+
 Korean family kids-YouTube videos → the same video with AI explainer picture cards and the user's twins as
 cartoon characters who react in speech bubbles. No cutting: the original video and audio play unchanged.
 Python 3.13 on Windows, NVIDIA GPU (RTX 2060 6 GB). UI text, logs and user-facing messages are Korean.
